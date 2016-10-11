@@ -1,0 +1,236 @@
+---
+title: "experiment"
+author: 'Jared Wilber SID #24881068'
+date: "April 7, 2016"
+output: html_document
+---
+
+# Experiment R-Code Guide
+
+## Set up randomization
+
+First, we need to randomly assign each classmate a treatment. 
+
+We have a list of all 18 possible combinations, so we'll permute our subjects (classmates) and assign them to one of the 18 possible treatment combinations.
+The below code achieves this:
+
+```{r}
+students <- c("student1","student2","student3","student4","student5","student6","student7","student8","student9","student10","student11","student12","student13","student14","student15","student16","student17","student18") 
+
+trt_combinations <- c("Plastic bottle, true label, coke first","Plastic bottle, true label, pepsi first","Plastic bottle, false label, coke first","Plastic bottle, false label, pepsi first","Plastic bottle, no label, coke first","Plastic bottle, no label, pepsi first","Can, true label, coke first","Can, true label, pepsi first","Can, false label, coke first","Can, false label, pepsi first","Can, no label, coke first","Can, no label, pepsi first","Glass bottle, true label, coke first","Glass bottle, true label, pepsi first", "Glass bottle, false label, coke first", "Glass bottle, false label, pepsi first", "Glass bottle, no label, coke first", "Glass bottle, no label, pepsi first")
+
+# Returns a list of classmates names, along with the trt they receive
+asn_trt <- function(classmatelist){
+  permuted_index <- sample(seq(length(classmatelist)))
+  new_list <- classmatelist[permuted_index]
+  names_and_trts <- vector(mode="numeric", length=0)
+  for (i in permuted_index){
+    x <- paste(new_list[i], trt_combinations[i])
+    names_and_trts <- append(names_and_trts, x)
+  }
+  return(names_and_trts)
+}
+
+sec1 <- asn_trt(students)
+```
+
+Now, we carry out the experiment.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+### --------------------Section 1-----------------------
+Step 1: Make a list of classmate names. We will use this list in a moment to dertermine which subjects are assigned which treatments.
+
+```{r} 
+# Classmate names
+namelist1 <- c()
+```
+
+Step 2: Create list of who gets what treatment combination. By calling the **asn_trt** function onto **namelist1** our list of names for section 1, we create a list of who gets assigned which treatment. 
+
+```{r}
+set.seed(123)
+sec1_trts <- asn_trt(namelist1)
+
+# section 1 treatments
+sec1_trts
+```
+
+Now that we know who gets what, we'll perform the experiment and add their response to our table.
+
+
+
+We created a google form to collect the responses, which we will match up to the subjects. We will then append each subjects response to the data.frame at his/her respective position.
+
+Below we create the dataframe and response values
+
+```{r}
+# Set up experiment table to gather response values
+exp1 <- expand.grid(bottle_type = c("plastic","can","glass"),
+                   label = c("true","false","none"),
+                   order = c("Pepsi First","Coke First"))
+
+
+#response1_list <- c()
+#exp1$response <- response1_list
+```
+
+Once we have our data frame and response values, we are done. We'll perform the analysis after we've done the same as above for Section 2.
+
+### ----------------------End Section 1---------------------
+
+
+
+### -----------------------Section 2----------------------
+
+Repeat the same steps for Section 1, but do so on the students in Section 2 and give them their own dataframe, **exp2**.
+
+```{r}
+exp2 <- expand.grid(bottle_type = c("plastic","can","glass"),
+                   label = c("true","false","none"),
+                   order = c("Pepsi First","Coke First"))
+sec2 <- asn_trt(students)
+```
+
+
+### ----------------------End Section 2----------------------------
+
+
+
+##------------------------Anova Analysis------------------------
+
+Now we have our two dataframes, one for each section. We can easily perform our analysis now.
+
+
+### Step 1: Combine the two dataframes into one
+```{r}
+# Combine into one dataframe
+#exp_data <- rbind(exp1,exp2)
+
+# Make factors so ANOVA works
+#exp_data$bottle_type <- as.factor(exp_data$bottle_type)
+#exp_data$label <- as.factor(exp_data$label)
+#exp_data$order <- as.factor(exp_data$order)
+#exp_data
+```
+
+## Step 2: Perform ANOVA
+
+```{r}
+#summary(aov(lm(response~order*label*bottle_type, data=exp_data)))
+```
+
+# Example Simulation
+
+```{r}
+demo_names <- c("Jared","Jane","isha","kyle",'rob','mark','jerry','stephanie','nura','kelly','william','winn','diana','chris','kyle','stacy','ali','kevin')
+
+demo_names2 <- c("Karthik","Claus","Edith","Brett","Florine","Jonas",
+"Hagarth","Muriel","Edward","Troy","Anders","Svenn","Roland","Nestor","Ben","Hans","Hanson","Oliver")
+
+sim1_trts <- asn_trt(demo_names)
+sim1_resp <- runif(18)
+sim1_exp <- exp1
+sim1_exp$response <- sim1_resp
+# First dataset
+sim1_exp
+
+
+sim2_trts <- asn_trt(demo_names2)
+sim2_resp <- runif(18)
+sim2_exp <- exp2
+sim2_exp$response <- sim2_resp
+
+
+# Data of all 36 replications
+sim_data <- as.data.frame(rbind(sim1_exp,sim2_exp))
+
+
+# define function to get a new experiment each time
+replicate_expr <- function(names){
+  sim1_trts <- asn_trt(demo_names)
+  sim1_resp <- runif(18)
+  sim1_exp <- exp1
+  sim1_exp$response <- sim1_resp
+  # First dataset
+  return(sim1_exp)
+}
+
+t <- replicate_expr(demo_names)
+t2 <- replicate_expr(demo_names2)
+exp_data <- as.data.frame(rbind(t,t2))
+summary(aov(lm(response~order*label*bottle_type, data=exp_data)))
+```
+
+```{r}
+# sec1
+label <- c("true label","true label", "false label", "false label", "no label","no label", "no label",
+           "true label", "true label", "false label","false label","true label", "false label","no label",
+           "true label","no label","no label","false label")
+order <- c("pepsi first","pepsi first","pepsi first","cole first","cole first","pepsi first","pepsi first",
+           "coke first","pepsi first","pepsi first","pepsi first","coke first", "coke first","pepsi first",
+           "coke first","coke first","coke first","coke first")
+bottle_type <- c("Glass bottle","Plastic bottle","Plastic bottle","Glass bottle","Can","Glass bottle",
+                 "Plastic bottle","Can","Can","Can","Glass bottle","Plastic bottle","Can","Can","Glass bottle",
+                 "Plastic bottle","Glass bottle","Plastic bottle")
+sec1_df <- data.frame(bottle_type = bottle_type,label = label, order = order)
+
+bottle_type2 <- c("Plastic bottle","Can","Plastic bottle","Glass bottle",
+                  "Can","Glass bottle","Glass bottle","Plastic bottle",
+                  "Plastic bottle","Glass bottle","Glass bottle",
+                  "Plastic bottle","Can","Can","Can","Can",
+                  "Plastic bottle","Glass bottle")
+label2 <- c("true label","false label","no label","true label",
+            "no label","no label","no label","false label","true label",
+            "true label","false label","no label","true label",
+            "false label","no label","true label","fale label",
+            "false label")
+order2 <- c("pepsi first","coke first","pepsi first","coke first",
+            "pepsi first","pepsi first","coke first","coke first",
+            "coke first","pepsi first","coke first","coke first",
+            "pepsi first","pepsi first","coke first","coke first",
+            "pepsi first","pepsi first")
+
+sec2_df <- data.frame(bottle_type = bottle_type2, label = label2,
+                   order = order2)
+
+total_df <- data.frame(rbind(sec1_df, sec2_df))
+
+resp <- c(2,4,3,-3,4,-3,-2,1,3,4,-1,3,-1,2,-4,-1,3,-2,1,2,3,-2,1,3,0,-3,2,
+          1,3,2,-2,-1,-2,-5,1,5)
+
+total_df$response <- resp
+
+
+summary(aov(lm(response~order*label*bottle_type, data=total_df)))
+```
+
+
+
+# Power
+
+## Factor 1: Bottle Type
+```{r}
+# Glass, Can, Bottle
+sum_square <- function(x){
+  return(sum(x**2))
+}
+
+ncp <- function(m,tau,sigma2){
+  sumsq <- sum_square(tau)
+  return( (m*sumsq) / sigma2)
+}
+```
+
+
+
+
+
+# Analysis Post-Experiment
+
+```{r}
+df <- as.data.frame(rbind(sec1,sec2))
+
+```
+
